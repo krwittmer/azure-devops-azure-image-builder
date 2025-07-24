@@ -1,0 +1,48 @@
+trigger:
+- main
+
+variables:
+  resourceGroup: 'aib-resource-group'
+  imageTemplateFile: 'imageTemplate.json'
+  imageTemplateName: 'demoImageTemplate'
+  location: 'eastus'
+  apiVersion: '2023-07-01'
+
+stages:
+- stage: DeployTemplate
+  jobs:
+  - job: DeployAIBTemplate
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Deploy Azure Image Builder Template'
+      inputs:
+        azureSubscription: 'YourServiceConnectionName'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az deployment group create \
+            --resource-group $(resourceGroup) \
+            --template-file $(imageTemplateFile)
+
+- stage: RunAIBTemplate
+  dependsOn: DeployTemplate
+  jobs:
+  - job: RunAIB
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Run Azure Image Builder'
+      inputs:
+        azureSubscription: 'YourServiceConnectionName'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az resource invoke-action \
+            --resource-group $(resourceGroup) \
+            --resource-type Microsoft.VirtualMachineImages/imageTemplates \
+            --name $(imageTemplateName) \
+            --action Run \
+            --api-version $(apiVersion)

@@ -1,0 +1,56 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "resources": [
+      {
+        "type": "Microsoft.VirtualMachineImages/imageTemplates",
+        "apiVersion": "2023-07-01",
+        "name": "demoImageTemplate",
+        "location": "eastus",
+        "identity": {
+          "type": "UserAssigned",
+          "userAssignedIdentities": {
+            "/subscriptions/<subscriptionId>/resourceGroups/<identityRg>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/<identityName>": {}
+          }
+        },
+        "properties": {
+          "buildTimeoutInMinutes": 90,
+          "source": {
+            "type": "PlatformImage",
+            "publisher": "Canonical",
+            "offer": "UbuntuServer",
+            "sku": "18.04-LTS",
+            "version": "latest"
+          },
+          "customize": [
+            {
+              "type": "Shell",
+              "name": "UpdatePackages",
+              "inline": [
+                "sudo apt-get update",
+                "sudo apt-get upgrade -y"
+              ]
+            }
+          ],
+          "distribute": [
+            {
+              "type": "ManagedImage",
+              "imageId": "/subscriptions/<subscriptionId>/resourceGroups/<imageOutputRg>/providers/Microsoft.Compute/images/demoImage",
+              "location": "eastus",
+              "runOutputName": "demoManagedImage"
+            }
+          ],
+          "stagingResourceGroup": "/subscriptions/<subscriptionId>/resourceGroups/<stagingRg>",
+          "vmProfile": {
+            "vmSize": "Standard_D2_v2"
+          },
+          "optimize": {
+            "vmBoot": {
+              "state": "Enabled"
+            }
+          }
+        }
+      }
+    ]
+  }
+  
